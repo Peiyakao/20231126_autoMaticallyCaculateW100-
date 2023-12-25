@@ -3,11 +3,41 @@ package com.example.demo;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.springframework.stereotype.Component;
+
+@Component
 public class ExcelParameter {
+    ArrayList<HashMap<String, Double>> elementMassData;
+
+    public ArrayList<HashMap<String, Double>> getElementMassData() {
+        return elementMassData;
+    }
+
+    public void setElementMassData(ArrayList<HashMap<String, Double>> elementMassData) {
+        this.elementMassData = elementMassData;
+    }
 
     String UrlOfExcel;
     ArrayList<Integer> numOfParticle;
     String elementOfAnaylis;
+    HashMap<String, String> nameOfElement;
+    ArrayList<String> elementOfAnaylist;
+
+    public ArrayList<String> getElementOfAnaylist() {
+        return elementOfAnaylist;
+    }
+
+    public void setElementOfAnaylist(ArrayList<String> elementOfAnaylist) {
+        this.elementOfAnaylist = elementOfAnaylist;
+    }
+
+    public HashMap<String, String> getNameOfElement() {
+        return nameOfElement;
+    }
+
+    public void setNameOfElement(HashMap<String, String> nameOfElement) {
+        this.nameOfElement = nameOfElement;
+    }
 
     public String getElementOfAnaylis() {
         return elementOfAnaylis;
