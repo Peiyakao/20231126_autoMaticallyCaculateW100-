@@ -48,7 +48,7 @@ public class GetExcelData {
         Integer workSheet;
         String exit;
         Scanner inputworkSheet = new Scanner(System.in);
-        System.out.println("請輸入目的工作表序位，例如:第一張工作表請填1:");
+        System.out.println("請輸入欲分析工作表的序位，例如:第一張工作表請填1:");
         if (inputworkSheet.hasNextLine()) {
             exit = inputworkSheet.nextLine();
             if (exit.equals("back")) {
@@ -78,7 +78,7 @@ public class GetExcelData {
         String columnOfSumString;
         Integer columnOfSum = 0;
         Scanner inputSum = new Scanner(System.in);
-        System.out.println("請輸入總和欄位，如果是A欄填寫A:");
+        System.out.println("請輸入部件/成品(Article)重量欄位，如果是A欄填寫A:");
         if (inputSum.hasNextLine()) {
             columnOfSumString = inputSum.nextLine();
             if (columnOfSumString.equals("back")) {
@@ -92,11 +92,11 @@ public class GetExcelData {
                 excelParameter.setColumnOfSum(columnOfSum - 1);
                 getExcelColumnOfElement();
             } else {
-                System.out.println("請輸入總和欄位，如果是A欄填寫A:");
+                System.out.println("請輸入部件/成品(Article)重量欄位，如果是A欄填寫A:");
                 getExcelColumnOfSum();
             }
         } else {
-            System.out.println("請輸入總和欄位，如果是A欄填寫A:");
+            System.out.println("請輸入部件/成品(Article)重量欄位，如果是A欄填寫A:");
             getExcelColumnOfSum();
         }
         // inputSum.close();
@@ -107,7 +107,7 @@ public class GetExcelData {
         String columnOfElementString;
         Integer columnOfElement = 0;
         Scanner inputElement = new Scanner(System.in);
-        System.out.println("請輸入存放元素欄位，如果是A欄填寫A:");
+        System.out.println("請輸入CAS Number欄位，如果是A欄填寫A:");
 
         // inputElement.close();
         if (inputElement.hasNextLine()) {
@@ -122,11 +122,11 @@ public class GetExcelData {
                 excelParameter.setColumnOfElement(columnOfElement - 1);
                 getExcelColumnOfMass();
             } else {
-                System.out.println("請輸入存放元素欄位，如果是A欄填寫A:");
+                System.out.println("請輸入CAS Number欄位，如果是A欄填寫A:");
                 getExcelColumnOfElement();
             }
         } else {
-            System.out.println("請輸入存放元素欄位，如果是A欄填寫A:");
+            System.out.println("請輸入CAS Number欄位，如果是A欄填寫A:");
             getExcelColumnOfElement();
         }
 
@@ -136,7 +136,7 @@ public class GetExcelData {
         String columnOfMassString;
         Integer columnOfMass = 0;
         Scanner inputMass = new Scanner(System.in);
-        System.out.println("請輸入重量欄位，如果是A欄填寫A:");
+        System.out.println("請輸入物質重量欄位，如果是A欄填寫A:");
         // inputMass.close();
         if (inputMass.hasNextLine()) {
             columnOfMassString = inputMass.nextLine();
@@ -151,11 +151,11 @@ public class GetExcelData {
                 excelParameter.setColumnOfMass(columnOfMass - 1);
                 getExcelColumnOfRange();
             } else {
-                System.out.println("請輸入重量欄位，如果是A欄填寫A:");
+                System.out.println("請輸入物質重量欄位，如果是A欄填寫A:");
                 getExcelColumnOfMass();
             }
         } else {
-            System.out.println("請輸入重量欄位，如果是A欄填寫A:");
+            System.out.println("請輸入物質重量欄位，如果是A欄填寫A:");
             getExcelColumnOfMass();
         }
 
@@ -164,7 +164,7 @@ public class GetExcelData {
     public void getExcelAnalysisSheet() {
         String workSheet;
         Scanner inputAnalysisSheet = new Scanner(System.in);
-        System.out.println("請輸入分析元素列表路徑");
+        System.out.println("請輸入欲分析物質/禁限用物質列表檔案路徑:");
         workSheet = inputAnalysisSheet.nextLine();
         // 判斷輸入內容是否為路徑
         if (workSheet.startsWith("\"") && workSheet.endsWith("\"")) {
@@ -188,7 +188,7 @@ public class GetExcelData {
         String columnOfRangeExit;
         Integer columnOfRange = 1;
         Scanner inputRange = new Scanner(System.in);
-        System.out.println("請輸入資料範圍，如果數值最後一行為16，請填16:");
+        System.out.println("請輸入資料範圍，如果數值最後一列為第16列，請填16:");
         excelParameter.setColumnOfRange(columnOfRange);
         if (inputRange.hasNextLine()) {
             columnOfRangeExit = inputRange.nextLine();
@@ -200,11 +200,11 @@ public class GetExcelData {
                 excelParameter.setColumnOfRange(columnOfRange);
                 getExcelAnalysisSheet();
             } else {
-                System.out.println("請輸入資料範圍，如果數值最後一行為16，請填16:");
+                System.out.println("請輸入資料範圍，如果數值最後一列為第16列，請填16:");
                 getExcelColumnOfRange();
             }
         } else {
-            System.out.println("請輸入資料範圍，如果數值最後一行為16，請填16:");
+            System.out.println("請輸入資料範圍，如果數值最後一列為第16列，請填16:");
             getExcelColumnOfRange();
         }
 
@@ -213,7 +213,7 @@ public class GetExcelData {
     public void getUrlOfElementName() {
         HashMap<String, String> nameOfElement = new HashMap<>();
         Scanner inputRange = new Scanner(System.in);
-        System.out.println("請輸入物質轉換表路徑:");
+        System.out.println("請輸入物質名稱對照表檔案路徑:");
 
         String urlOfElementName = inputRange.nextLine();
         if (urlOfElementName.equals("back")) {
@@ -227,7 +227,7 @@ public class GetExcelData {
             excelParameter.setElementOfAnaylis(urlOfElementName);
             // inputUrl.close();
             // Step 2 輸入工作表位置
-            inputRange.close();
+            // inputRange.close();
             try {
                 InputStream excelFile = new FileInputStream(urlOfElementName);
                 Workbook workbook = WorkbookFactory.create(excelFile);
@@ -476,15 +476,17 @@ public class GetExcelData {
                 }
 
             }
+
             if (newSheet != null && newSheet.getRow(0) != null) {
                 System.out.println("本次執行發現至少一筆物質含量超過規範");
-                newSheet.shiftRows(0, 302, 1, true, false);
 
             } else {
                 System.out.println("本次執行無發現含量超過規範之物質");
+
             }
 
             workbook.close();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
