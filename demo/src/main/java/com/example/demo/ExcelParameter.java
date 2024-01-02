@@ -7,6 +7,16 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ExcelParameter {
+    Double weightPercentLimit;
+
+    public Double getWeightPercentLimit() {
+        return weightPercentLimit;
+    }
+
+    public void setWeightPercentLimit(Double weightPercentLimit) {
+        this.weightPercentLimit = weightPercentLimit;
+    }
+
     ArrayList<HashMap<String, Double>> elementMassData;
 
     public ArrayList<HashMap<String, Double>> getElementMassData() {

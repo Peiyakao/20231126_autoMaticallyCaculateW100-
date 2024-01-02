@@ -13,7 +13,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.nio.file.*;
-
+import java.text.DecimalFormat;
 import java.util.Scanner;
 
 public class GetExcelData {
@@ -164,6 +164,9 @@ public class GetExcelData {
     public void getExcelAnalysisSheet() {
         String workSheet;
         Scanner inputAnalysisSheet = new Scanner(System.in);
+
+        HashMap<String, String> nameOfElement = new HashMap<>();
+        DecimalFormat decimalFormat = new DecimalFormat("#");
         System.out.println("請輸入欲分析物質/禁限用物質列表檔案路徑:");
         workSheet = inputAnalysisSheet.nextLine();
         // 判斷輸入內容是否為路徑
@@ -173,9 +176,47 @@ public class GetExcelData {
         Path pathofExcel = Paths.get(workSheet);
         if (Files.exists(pathofExcel)) {
             excelParameter.setElementOfAnaylis(workSheet);
+            excelParameter.setElementOfAnaylis(workSheet);
+            try {
+                InputStream excelFile = new FileInputStream(workSheet);
+                Workbook workbook = WorkbookFactory.create(excelFile);
+                Sheet sheet = workbook.getSheetAt(0);
+                for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+                    Row sumRow = sheet.getRow(rowNum);
+                    Cell cellOfId = sumRow.getCell(0);
+                    Cell cellOfName = sumRow.getCell(1);
+                    String cellOfNameString = "";
+                    String cellOfIdString = "";
+
+                    if (cellOfName.getCellType() == CellType.NUMERIC && cellOfId.getCellType() == CellType.NUMERIC) {
+                        cellOfNameString = decimalFormat.format(cellOfName.getNumericCellValue());
+                        cellOfIdString = decimalFormat.format(cellOfId.getNumericCellValue());
+                    } else if (cellOfName.getCellType() == CellType.NUMERIC
+                            || cellOfId.getCellType() == CellType.NUMERIC) {
+                        if (cellOfName.getCellType() == CellType.NUMERIC) {
+                            cellOfNameString = decimalFormat.format(cellOfName.getNumericCellValue());
+                            cellOfIdString = cellOfId.getStringCellValue();
+                        } else if (cellOfId.getCellType() == CellType.NUMERIC) {
+                            cellOfIdString = decimalFormat.format(cellOfId.getNumericCellValue());
+                            cellOfNameString = cellOfName.getStringCellValue();
+                        }
+                    } else {
+                        cellOfIdString = cellOfId.getStringCellValue();
+                        cellOfNameString = cellOfName.getStringCellValue();
+                    }
+                    nameOfElement.put(cellOfIdString, cellOfNameString);
+                    System.out.println(cellOfIdString + "," + cellOfNameString);
+
+                }
+                excelParameter.setNameOfElement(nameOfElement);
+                getUrlOfElementName();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             // inputUrl.close();
             // Step 2 輸入工作表位置
-            getUrlOfElementName();
 
         } else {
             System.out.println("查無所輸入檔案，請重新輸入");
@@ -211,62 +252,48 @@ public class GetExcelData {
     }
 
     public void getUrlOfElementName() {
-        HashMap<String, String> nameOfElement = new HashMap<>();
-        Scanner inputRange = new Scanner(System.in);
-        System.out.println("請輸入物質名稱對照表檔案路徑:");
-
-        String urlOfElementName = inputRange.nextLine();
-        if (urlOfElementName.equals("back")) {
-            getExcelColumnOfRange();
-        }
-        if (urlOfElementName.startsWith("\"") && urlOfElementName.endsWith("\"")) {
-            urlOfElementName = urlOfElementName.substring(1, urlOfElementName.length() - 1);
-        }
-        Path pathofExcel = Paths.get(urlOfElementName);
-        if (Files.exists(pathofExcel)) {
-            excelParameter.setElementOfAnaylis(urlOfElementName);
-            // inputUrl.close();
-            // Step 2 輸入工作表位置
-            // inputRange.close();
-            try {
-                InputStream excelFile = new FileInputStream(urlOfElementName);
-                Workbook workbook = WorkbookFactory.create(excelFile);
-                Sheet sheet = workbook.getSheetAt(0);
-                for (int rowNum = 1; rowNum < sheet.getLastRowNum(); rowNum++) {
-                    Row sumRow = sheet.getRow(rowNum);
-                    Cell cellOfId = sumRow.getCell(0);
-                    Cell cellOfName = sumRow.getCell(1);
-                    if (!cellOfId.getStringCellValue().contains("*")) {
-                        nameOfElement.put(cellOfId.getStringCellValue(), cellOfName.getStringCellValue());
-                        // System.out.println("元素轉換表" + tempElement.get(cellOfId.getStringCellValue()));
-                    }
-                }
-                excelParameter.setNameOfElement(nameOfElement);
+        Double weightPercentLimit;
+        Scanner inputweightPercentLimit = new Scanner(System.in);
+        System.out.println("請輸入物質濃度上限，如需將分析物質濃度全部列出，請輸入0:");
+        String input = inputweightPercentLimit.nextLine();
+        try {
+            weightPercentLimit = Double.parseDouble(input);
+            if (weightPercentLimit <= 100 && weightPercentLimit >= 0) {
+                excelParameter.setWeightPercentLimit(weightPercentLimit);
+                excelParameter.setElementOfAnaylis(excelParameter.getElementOfAnaylis());
                 getElementOfAnaylis(excelParameter.getElementOfAnaylis());
 
-            } catch (Exception e) {
-                e.printStackTrace();
+            } else {
+                System.out.println("請輸入0-100數字");
+                getExcelAnalysisSheet();
             }
-
-        } else {
-            System.out.println("查無所輸入檔案，請重新輸入");
-            getUrlOfElementName();
+        } catch (Exception e) {
+            System.out.println("請輸入0-100數字");
+            getExcelAnalysisSheet();
         }
 
     }
 
     public void getElementOfAnaylis(String analysisUrl) {
         ArrayList<String> analysisList = new ArrayList();
+        DecimalFormat decimalFormat = new DecimalFormat("#");
         try {
             InputStream excelFile = new FileInputStream(analysisUrl);
             Workbook workbook = WorkbookFactory.create(excelFile);
             Sheet sheet = workbook.getSheetAt(0);
-            for (int rowNum = 1; rowNum < sheet.getLastRowNum(); rowNum++) {
+            System.out.println(sheet.getLastRowNum());
+            for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
                 Row sumRow = sheet.getRow(rowNum);
                 Cell cell = sumRow.getCell(0);
-                if (cell.getCellType() == CellType.STRING) {
-                    analysisList.add(cell.getStringCellValue().trim());
+                String cellString = "";
+                if (cell.getCellType() == CellType.NUMERIC) {
+                    System.out.println("數字");
+                    cellString = decimalFormat.format(cell.getNumericCellValue());
+                } else if (cell.getCellType() == CellType.STRING) {
+                    cellString = String.valueOf(cell.getStringCellValue());
                 }
+                analysisList.add(cellString.trim());
+                System.out.println(cellString);
             }
             excelParameter.setElementOfAnaylist(analysisList);
             System.out.println("本次分析元素物質為:" + String.join(",", analysisList));
@@ -403,9 +430,16 @@ public class GetExcelData {
             cellOfPW.setCellValue("物質含量百分比");
             CellStyle percentageStyle = workbook.createCellStyle();
             percentageStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00%"));
+            try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+                workbook.write(fileOut);
+                System.out.println("新增表頭");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             Integer numberOfElement = 0;
             Integer currentCellOfNumber = 0;
             String currentCellOfPartName = "";
+            Integer totalAddRow = 0;
             for (Integer num : numOfParticle) {
                 Row sumRow = sheet.getRow(tempSumofRow);
                 Cell cell = sumRow.getCell(columnOfSum);
@@ -420,11 +454,13 @@ public class GetExcelData {
                         // System.out.println("目前分析元素" + analysisElement);
                         for (int row = tempSumofRow; row < num + tempSumofRow; row++) {
                             HashMap<String, Double> testElement = elementMassData.get(row - 1);
+                            // System.out.println(analysisElement);
+                            // System.out.println(testElement);
                             if (testElement.containsKey(analysisElement)) {
                                 try {
                                     if (testElement.get(analysisElement) instanceof Number) {
                                         accumulation += testElement.get(analysisElement);
-                                        System.out.println("累積含量" + accumulation);
+                                        System.out.println(analysisElement + "累積含量" + accumulation);
                                     }
                                 } catch (Exception e) {
                                     System.out.println("第" + row + "行欄位重量數值型態有誤");
@@ -432,7 +468,9 @@ public class GetExcelData {
 
                             }
                         }
-                        Double elementWeightPercent = accumulation / currentSum;
+
+                        Double elementWeightPercent = accumulation * 100 / currentSum;
+                        System.out.println(elementWeightPercent + "=" + accumulation + "/" + currentSum);
                         Row rowOfElement = newSheet.createRow(tempWriteRow);
                         Cell cellOfNumber = rowOfElement.createCell(0);
                         Cell cellOfPartName = rowOfElement.createCell(1);
@@ -443,17 +481,28 @@ public class GetExcelData {
                             if (particleNumberOfcell.getNumericCellValue() > 0) {
                                 currentCellOfNumber = (int) particleNumberOfcell.getNumericCellValue();
                                 currentCellOfPartName = particleNameOfcell.getStringCellValue();
-                                cellOfNumber.setCellValue(particleNumberOfcell.getNumericCellValue());
-                                cellOfPartName.setCellValue(particleNameOfcell.getStringCellValue());
+                                cellOfNumber.setCellValue(currentCellOfNumber);
+                                cellOfPartName.setCellValue(currentCellOfPartName);
+                                try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+                                    workbook.write(fileOut);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
 
                             } else if ((particleNumberOfRow.getCell(0) == null)
                                     || (particleNumberOfcell.getNumericCellValue() == 0)) {
                                 cellOfNumber.setCellValue(currentCellOfNumber);
                                 cellOfPartName.setCellValue(currentCellOfPartName);
+                                try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+                                    workbook.write(fileOut);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
                             }
 
                         }
-                        if (elementWeightPercent > 0.1) {
+                        if (elementWeightPercent > excelParameter.getWeightPercentLimit()) {
+                            totalAddRow++;
                             Cell cellOfElement = rowOfElement.createCell(2);
                             cellOfElement.setCellValue(nameOfElement.get(analysisElement));
                             Cell cellOfWeight = rowOfElement.createCell(3);
@@ -477,14 +526,13 @@ public class GetExcelData {
 
             }
 
-            if (newSheet != null && newSheet.getRow(0) != null) {
+            if (totalAddRow > 0) {
                 System.out.println("本次執行發現至少一筆物質含量超過規範");
 
             } else {
                 System.out.println("本次執行無發現含量超過規範之物質");
 
             }
-
             workbook.close();
 
         } catch (Exception e) {
