@@ -9,7 +9,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import java.nio.file.*;
@@ -177,10 +180,17 @@ public class GetExcelData {
         if (Files.exists(pathofExcel)) {
             excelParameter.setElementOfAnaylis(workSheet);
             excelParameter.setElementOfAnaylis(workSheet);
+            Workbook workbook = null;
             try {
-                InputStream excelFile = new FileInputStream(workSheet);
-                Workbook workbook = WorkbookFactory.create(excelFile);
+                // InputStream excelFile = new FileInputStream(workSheet);
+                if (workSheet.contains("xlsx")) {
+                    workbook = new XSSFWorkbook(new FileInputStream(workSheet));
+
+                } else {
+                    workbook = new HSSFWorkbook(new FileInputStream(workSheet));
+                }
                 Sheet sheet = workbook.getSheetAt(0);
+                // Workbook workbook = WorkbookFactory.create(excelFile);
                 for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
                     Row sumRow = sheet.getRow(rowNum);
                     Cell cellOfId = sumRow.getCell(0);
@@ -277,9 +287,15 @@ public class GetExcelData {
     public void getElementOfAnaylis(String analysisUrl) {
         ArrayList<String> analysisList = new ArrayList();
         DecimalFormat decimalFormat = new DecimalFormat("#");
+        Workbook workbook = null;
         try {
-            InputStream excelFile = new FileInputStream(analysisUrl);
-            Workbook workbook = WorkbookFactory.create(excelFile);
+            // InputStream excelFile = new FileInputStream(analysisUrl);
+            if (analysisUrl.contains("xlsx")) {
+                workbook = new XSSFWorkbook(new FileInputStream(analysisUrl));
+            } else {
+                workbook = new HSSFWorkbook(new FileInputStream(analysisUrl));
+            }
+            // Workbook workbook = WorkbookFactory.create(excelFile);
             Sheet sheet = workbook.getSheetAt(0);
             System.out.println(sheet.getLastRowNum());
             for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
@@ -312,8 +328,14 @@ public class GetExcelData {
             Integer columnOfRange) {
         // 載入EXCEL資料
         ArrayList<Integer> numOfParticle = new ArrayList();
-        try (InputStream excelFile = new FileInputStream(urlOfExcel)) {
-            Workbook workbook = WorkbookFactory.create(excelFile);
+        Workbook workbook = null;
+        try {
+            if (urlOfExcel.contains("xlsx")) {
+                workbook = new XSSFWorkbook(new FileInputStream(urlOfExcel));
+            } else {
+                workbook = new HSSFWorkbook(new FileInputStream(urlOfExcel));
+            }
+            // Workbook workbook = WorkbookFactory.create(excelFile);
             Sheet sheet = workbook.getSheetAt(workSheet);
             // System.out.println("讀取最小物質數量");
             Integer temp = 1;
@@ -360,8 +382,14 @@ public class GetExcelData {
             Integer columnOfRange) {
         ArrayList<HashMap<String, Double>> elementMassData = new ArrayList<>();
         Integer isAnyError = 0;
-        try (InputStream excelFile = new FileInputStream(urlOfExcel)) {
-            Workbook workbook = WorkbookFactory.create(excelFile);
+        Workbook workbook = null;
+        try {
+            if (urlOfExcel.contains("xlsx")) {
+                workbook = new XSSFWorkbook(new FileInputStream(urlOfExcel));
+            } else {
+                workbook = new HSSFWorkbook(new FileInputStream(urlOfExcel));
+            }
+            // Workbook workbook = WorkbookFactory.create(excelFile);
             Sheet sheet = workbook.getSheetAt(workSheet);
             System.out.println("讀取物質名稱及數值");
             for (int rowNum = 1; rowNum < columnOfRange; rowNum++) {
@@ -415,8 +443,14 @@ public class GetExcelData {
             Integer columnOfSum) {
         Integer tempSumofRow = 1;
         Integer writeRow = 1;
-        try (InputStream excelFile = new FileInputStream(urlOfExcel)) {
-            Workbook workbook = WorkbookFactory.create(excelFile);
+        Workbook workbook = null;
+        try {
+            // Workbook workbook = WorkbookFactory.create(excelFile);
+            if (urlOfExcel.contains("xlsx")) {
+                workbook = new XSSFWorkbook(new FileInputStream(urlOfExcel));
+            } else {
+                workbook = new HSSFWorkbook(new FileInputStream(urlOfExcel));
+            }
             Sheet sheet = workbook.getSheetAt(workSheet);
             Sheet newSheet = workbook.createSheet();
             Row rowOfTitle = newSheet.createRow(0);
