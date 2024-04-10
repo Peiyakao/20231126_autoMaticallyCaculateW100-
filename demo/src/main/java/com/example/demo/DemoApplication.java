@@ -1,7 +1,5 @@
 package com.example.demo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
 
 import org.springframework.boot.SpringApplication;
@@ -26,7 +24,6 @@ public class DemoApplication {
 				} else {
 					System.out.println("等待輸入...");
 				}
-
 			}
 			scanner.close();
 			if (isRunning.equals("N")) {
