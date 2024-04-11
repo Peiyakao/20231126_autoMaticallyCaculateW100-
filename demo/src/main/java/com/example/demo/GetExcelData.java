@@ -531,7 +531,7 @@ public class GetExcelData {
                         CommonContext.ANALYSIS_LOG_MESSAGE_ERROR_TYPE = "欄位物質名稱為日期格式";
                         CommonContext.updateAnalysisLogMessage();
                         analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL, CommonContext.ANALYSIS_LOG_MESSAGE);
-
+                        tempElement.put("", 0.00);
                     } catch (Exception e) {
 
                     }
@@ -598,20 +598,22 @@ public class GetExcelData {
                         tempElement.put(element.getStringCellValue().trim(), -1.00);
                     }
 
-                    elementMassData.add(tempElement);
                 } else if (element.getCellType() == CellType.BLANK) {
                     CommonContext.ANALYSIS_LOG_MESSAGE_ROW = rowNum + 1;
                     CommonContext.ANALYSIS_LOG_MESSAGE_CELL = exchangeIndexToChar(columnOfElement);
                     CommonContext.ANALYSIS_LOG_MESSAGE_ERROR_TYPE = "欄位物質名稱為空值";
                     CommonContext.updateAnalysisLogMessage();
                     analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL, CommonContext.ANALYSIS_LOG_MESSAGE);
+                    tempElement.put("", 0.00);
                 } else if (element.getCellType() == CellType.FORMULA) {
                     CommonContext.ANALYSIS_LOG_MESSAGE_ROW = rowNum + 1;
                     CommonContext.ANALYSIS_LOG_MESSAGE_CELL = exchangeIndexToChar(columnOfElement);
                     CommonContext.ANALYSIS_LOG_MESSAGE_ERROR_TYPE = "欄位物質名稱為公式";
                     CommonContext.updateAnalysisLogMessage();
                     analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL, CommonContext.ANALYSIS_LOG_MESSAGE);
+                    tempElement.put("", 0.00);
                 }
+                elementMassData.add(tempElement);
             }
         } catch (Exception e) {
             analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL, "取得分析表物質質量意外錯誤");
@@ -698,13 +700,20 @@ public class GetExcelData {
                 Integer tempWriteRow = writeRow;
                 for (String analysisElement : elementOfAnaylis) {
                     Double accumulation = 0.00;
+                    Boolean printOutElement = false;
                     // System.out.println("目前分析元素" + analysisElement);
                     System.out.println(elementMassData.size());
                     for (int row = tempSumofRow; row < num + tempSumofRow; row++) {
+                        try {
+                            HashMap<String, Double> testElement = elementMassData.get(row - 1);
+                        } catch (Exception e) {
+                            System.out.println(e);
+                        }
                         HashMap<String, Double> testElement = elementMassData.get(row - 1);
                         // System.out.println(analysisElement);
                         // System.out.println(testElement);
                         if (testElement.containsKey(analysisElement)) {
+                            printOutElement = true;
                             try {
                                 System.out.println(testElement.get(analysisElement));
                                 if (testElement.get(analysisElement) != -1) {
@@ -759,7 +768,7 @@ public class GetExcelData {
                         }
 
                     }
-                    if (accumulationError.equals("ERROR")) {
+                    if (accumulationError.equals("ERROR") && printOutElement) {
                         totalAddRow++;
                         Cell cellOfElement = rowOfElement.createCell(2);
                         cellOfElement.setCellValue(nameOfElement.get(analysisElement));
@@ -773,7 +782,7 @@ public class GetExcelData {
                                     CommonContext.ANALYSIS_LOG_EXCEL_UNCLOSED + e);
                         }
                     }
-                    if (elementWeightPercent >= excelParameter.getWeightPercentLimit()
+                    if (elementWeightPercent > excelParameter.getWeightPercentLimit()
                             && accumulationError.equals("")) {
                         totalAddRow++;
                         Cell cellOfElement = rowOfElement.createCell(2);
