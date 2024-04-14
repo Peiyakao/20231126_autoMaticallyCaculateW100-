@@ -2,6 +2,7 @@ package com.example.demo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
@@ -102,6 +103,8 @@ public class ExcelParameter {
     Integer ColumnOfMass;
     Integer ColumnOfElement;
     Integer ColumnOfRange;
+
+    ArrayList<ExcelWriteData> excelWriteDataList = new ArrayList<>();
 
     public Integer getColumnOfRange() {
         return ColumnOfRange;

@@ -418,7 +418,7 @@ public class GetExcelData {
 
         } else {
             try (Workbook workbook = new XSSFWorkbook()) {
-                System.out.println(CommonContext.ANALYSIS_LOG_CURRENT_WORKSHEET);
+
                 Sheet sheet = workbook.createSheet(CommonContext.ANALYSIS_LOG_CURRENT_WORKSHEET);
                 Row rowOfTitle = sheet.createRow(0);
                 Cell cellOfNo = rowOfTitle.createCell(0);
@@ -448,6 +448,7 @@ public class GetExcelData {
         // 載入EXCEL資料
         ArrayList<Integer> numOfParticle = new ArrayList();
         Workbook workbook = null;
+        System.out.println(urlOfExcel);
         try {
             if (urlOfExcel.contains("xlsx")) {
                 workbook = new XSSFWorkbook(new FileInputStream(urlOfExcel));
@@ -522,7 +523,6 @@ public class GetExcelData {
                 // 先判定欄位名稱符合規則在判斷重量欄位
                 if (element.getCellType() == CellType.NUMERIC) {
                     String cas = String.valueOf(element.getNumericCellValue()).trim();
-                    System.out.println("NUM" + cas);
                     // 欄位名稱日期格式不做事
                     try {
                         Date isDate = element.getDateCellValue();
@@ -566,7 +566,6 @@ public class GetExcelData {
                     }
 
                 } else if (element.getCellType() == CellType.STRING) {
-                    System.out.println("STR" + element.getStringCellValue());
 
                     if (mass.getCellType() == CellType.NUMERIC || mass.getCellType() == CellType.FORMULA) {
                         try {
@@ -678,7 +677,7 @@ public class GetExcelData {
             cellOfPW.setCellValue("物質含量百分比");
             CellStyle percentageStyle = workbook.createCellStyle();
             percentageStyle.setDataFormat(workbook.createDataFormat().getFormat("0.00%"));
-            try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+            try (FileOutputStream fileOut = new FileOutputStream(urlOfExcel)) {
                 workbook.write(fileOut);
                 System.out.println("新增表頭");
 
@@ -692,39 +691,61 @@ public class GetExcelData {
             // CommonContext.ANALYSIS_LOG_START_MESSAGE = "開始計算物質重量百分比";
             // analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL,
             // CommonContext.ANALYSIS_LOG_START_MESSAGE);
+
             for (Integer num : numOfParticle) {
                 String accumulationError = "";
+                String currentSumError = "";
+                Integer insertToExcelNum = num;
+                Double currentSum;
                 Row sumRow = sheet.getRow(tempSumofRow);
                 Cell cell = sumRow.getCell(columnOfSum);
-                Double currentSum = cell.getNumericCellValue();
+
+                if (cell.getCellType() == CellType.NUMERIC) {
+                    try {
+                        currentSum = cell.getNumericCellValue();
+                    } catch (Exception e) {
+                        currentSum = -1.00;
+                        currentSumError = "ERROR";
+                        CommonContext.ANALYSIS_LOG_MESSAGE_ROW = tempSumofRow;
+                        CommonContext.ANALYSIS_LOG_MESSAGE_CELL = exchangeIndexToChar(columnOfSum);
+                        CommonContext.ANALYSIS_LOG_MESSAGE_ERROR_TYPE = "欄位總重量數型態不為數值";
+                        CommonContext.updateAnalysisLogMessage();
+                        analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL,
+                                CommonContext.ANALYSIS_LOG_MESSAGE);
+                    }
+
+                } else {
+                    currentSum = -1.00;
+                    currentSumError = "ERROR";
+                    CommonContext.ANALYSIS_LOG_MESSAGE_ROW = tempSumofRow;
+                    CommonContext.ANALYSIS_LOG_MESSAGE_CELL = exchangeIndexToChar(columnOfSum);
+                    CommonContext.ANALYSIS_LOG_MESSAGE_ERROR_TYPE = "欄位總重量數型態不為數值";
+                    CommonContext.updateAnalysisLogMessage();
+                    analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL,
+                            CommonContext.ANALYSIS_LOG_MESSAGE);
+
+                }
                 Integer tempWriteRow = writeRow;
+                Integer tempWriteInColumn = tempWriteRow;
+
                 for (String analysisElement : elementOfAnaylis) {
+                    ExcelWriteData excelWriteData = new ExcelWriteData();
                     Double accumulation = 0.00;
                     Boolean printOutElement = false;
-                    // System.out.println("目前分析元素" + analysisElement);
-                    System.out.println(elementMassData.size());
                     for (int row = tempSumofRow; row < num + tempSumofRow; row++) {
-                        try {
-                            HashMap<String, Double> testElement = elementMassData.get(row - 1);
-                        } catch (Exception e) {
-                            System.out.println(e);
-                        }
+
                         HashMap<String, Double> testElement = elementMassData.get(row - 1);
-                        // System.out.println(analysisElement);
-                        // System.out.println(testElement);
+                        System.out.println(testElement + "," + analysisElement);
                         if (testElement.containsKey(analysisElement)) {
                             printOutElement = true;
                             try {
-                                System.out.println(testElement.get(analysisElement));
                                 if (testElement.get(analysisElement) != -1) {
                                     accumulation += testElement.get(analysisElement);
                                     System.out.println(analysisElement + "累積含量" + accumulation);
                                 } else {
-                                    accumulationError = "ERROR";
                                     System.out.println("ERROR");
                                 }
                             } catch (Exception e) {
-                                System.out.println("第" + row + "行欄位重量數值型態有誤");
                                 CommonContext.ANALYSIS_LOG_MESSAGE_ROW = row;
                                 CommonContext.ANALYSIS_LOG_MESSAGE_CELL = exchangeIndexToChar(columnOfSum);
                                 CommonContext.ANALYSIS_LOG_MESSAGE_ERROR_TYPE = "欄位總重量數型態不為數值，請檢查是否為公式";
@@ -735,23 +756,37 @@ public class GetExcelData {
 
                         }
                     }
-
-                    Double elementWeightPercent = accumulation / currentSum;
-                    System.out.println(elementWeightPercent + "=" + accumulation + "/" + currentSum);
-                    Row rowOfElement = newSheet.createRow(tempWriteRow);
-                    Cell cellOfNumber = rowOfElement.createCell(0);
-                    Cell cellOfPartName = rowOfElement.createCell(1);
+                    Row rowOfElement = newSheet.createRow(tempWriteInColumn);
+                    Row rowOfTitleElement = newSheet.createRow(tempWriteRow);
+                    Cell cellOfNumber = rowOfTitleElement.createCell(0);
+                    Cell cellOfPartName = rowOfTitleElement.createCell(1);
                     Row particleNumberOfRow = sheet.getRow(numberOfElement + 1);
                     Cell particleNumberOfcell = particleNumberOfRow.getCell(0);
                     Cell particleNameOfcell = particleNumberOfRow.getCell(1);
+
+                    Double elementWeightPercent = accumulation / currentSum;
+                    System.out.println(elementWeightPercent + "=" + accumulation + "/" + currentSum);
                     if (Objects.equals(tempWriteRow, numberOfElement + 1)) {
+                        CommonContext.INSERTTITLETOEXECL = true;
+                        System.out.println(true);
                         if (particleNumberOfcell.getNumericCellValue() > 0) {
                             currentCellOfNumber = (int) particleNumberOfcell.getNumericCellValue();
-                            currentCellOfPartName = particleNameOfcell.getStringCellValue();
+
+                            // 判斷部件料號型別是否正確
+                            if (particleNameOfcell.getCellType() == CellType.STRING) {
+                                currentCellOfPartName = particleNameOfcell.getStringCellValue();
+                            } else if (particleNameOfcell.getCellType() == CellType.NUMERIC) {
+                                double numericValue = particleNameOfcell.getNumericCellValue();
+                                currentCellOfPartName = String.valueOf(numericValue);
+                            }
+                            excelWriteData.setCurrentCellOfNumber(currentCellOfNumber);
                             cellOfNumber.setCellValue(currentCellOfNumber);
+                            excelWriteData.setParticleNameOfcell(currentCellOfPartName);
                             cellOfPartName.setCellValue(currentCellOfPartName);
-                            try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
-                                workbook.write(fileOut);
+
+                            try (FileOutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+                                // workbook.write(fileOut);
+                                System.out.println("write");
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -759,50 +794,112 @@ public class GetExcelData {
                         } else if ((particleNumberOfRow.getCell(0) == null)
                                 || (particleNumberOfcell.getNumericCellValue() == 0)) {
                             cellOfNumber.setCellValue(currentCellOfNumber);
+                            excelWriteData.setCurrentCellOfNumber(currentCellOfNumber);
                             cellOfPartName.setCellValue(currentCellOfPartName);
-                            try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
-                                workbook.write(fileOut);
+                            excelWriteData.setParticleNameOfcell(currentCellOfPartName);
+                            try (FileOutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+                                // workbook.write(fileOut);
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
 
+                    } else {
+                        CommonContext.INSERTTITLETOEXECL = false;
                     }
-                    if (accumulationError.equals("ERROR") && printOutElement) {
+                    if ((accumulationError.equals("ERROR") || currentSumError.equals("ERROR"))
+                            && printOutElement) {
                         totalAddRow++;
                         Cell cellOfElement = rowOfElement.createCell(2);
                         cellOfElement.setCellValue(nameOfElement.get(analysisElement));
+                        excelWriteData.setCellOfElement(nameOfElement.get(analysisElement));
                         Cell cellOfWeight = rowOfElement.createCell(3);
                         cellOfWeight.setCellValue(accumulationError);
+                        excelWriteData.setCellOfWeight(-1.00);
                         try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
-                            workbook.write(fileOut);
+                            CommonContext.INSERTRESULTTOEXCEL = true;
+                            // workbook.write(fileOut);
                             System.out.println("新增資料行數:" + tempWriteRow);
                         } catch (Exception e) {
+                            CommonContext.INSERTRESULTTOEXCEL = false;
                             analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL,
                                     CommonContext.ANALYSIS_LOG_EXCEL_UNCLOSED + e);
                         }
-                    }
-                    if (elementWeightPercent > excelParameter.getWeightPercentLimit()
+
+                    } else if (elementWeightPercent > excelParameter.getWeightPercentLimit()
                             && accumulationError.equals("")) {
                         totalAddRow++;
                         Cell cellOfElement = rowOfElement.createCell(2);
                         cellOfElement.setCellValue(nameOfElement.get(analysisElement));
+                        excelWriteData.setCellOfElement(nameOfElement.get(analysisElement));
                         Cell cellOfWeight = rowOfElement.createCell(3);
                         cellOfWeight.setCellValue(elementWeightPercent);
+                        excelWriteData.setCellOfWeight(elementWeightPercent);
                         cellOfWeight.setCellStyle(percentageStyle);
                         try (OutputStream fileOut = new FileOutputStream(urlOfExcel)) {
-                            workbook.write(fileOut);
-                            System.out.println("新增資料行數:" + tempWriteRow);
+                            // workbook.write(fileOut);
+                            tempWriteInColumn++;
+                            CommonContext.INSERTRESULTTOEXCEL = true;
+
                         } catch (Exception e) {
                             analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL,
                                     CommonContext.ANALYSIS_LOG_EXCEL_UNCLOSED + e);
+                            CommonContext.INSERTRESULTTOEXCEL = false;
                         }
+                    } else {
+                        CommonContext.INSERTRESULTTOEXCEL = false;
                     }
+                    String lastPartName = "";
+                    String lastEleName = "";
+                    if (CommonContext.INSERTRESULTTOEXCEL || CommonContext.INSERTTITLETOEXECL) {
+                        System.out.println(excelParameter.excelWriteDataList.size());
+                        if (excelParameter.excelWriteDataList.size() > 0) {
+                            lastPartName = excelParameter.excelWriteDataList
+                                    .get(excelParameter.excelWriteDataList.size() - 1).getParticleNameOfcell();
+                            lastEleName = excelParameter.excelWriteDataList
+                                    .get(excelParameter.excelWriteDataList.size() - 1).getCellOfElement();
+                        }
+
+                        if (CommonContext.INSERTRESULTTOEXCEL &&
+                                lastPartName != null &&
+                                !lastPartName.isEmpty() &&
+                                (lastEleName == null ||
+                                        lastEleName.isEmpty())) {
+                            excelParameter.excelWriteDataList
+                                    .get(excelParameter.excelWriteDataList.size() - 1)
+                                    .setCellOfElement(excelWriteData.getCellOfElement());
+                            excelParameter.excelWriteDataList
+                                    .get(excelParameter.excelWriteDataList.size() - 1)
+                                    .setCellOfWeight(excelWriteData.getCellOfWeight());
+
+                        } else {
+                            excelParameter.excelWriteDataList.add(excelWriteData);
+                            insertToExcelNum--;
+                        }
+
+                        System.out.println("861" +
+                                excelWriteData.getCurrentCellOfNumber() + "," +
+                                excelWriteData.getParticleNameOfcell() + "," +
+                                excelWriteData.getCellOfElement() + "," +
+                                excelWriteData.getCellOfWeight());
+
+                    }
+
                     tempWriteRow++;
+
                 }
                 writeRow += num;
                 tempSumofRow += num;
                 numberOfElement += num;
+
+                // 補足空白資料
+                System.out.println(insertToExcelNum);
+                if (insertToExcelNum != 0) {
+                    for (int i = 0; i < insertToExcelNum; i++) {
+                        ExcelWriteData excelWriteData = new ExcelWriteData();
+                        excelParameter.excelWriteDataList.add(excelWriteData);
+                    }
+                }
 
             }
 
@@ -813,9 +910,41 @@ public class GetExcelData {
                 System.out.println("本次執行無發現含量超過規範之物質");
 
             }
-            // CommonContext.ANALYSIS_LOG_END_MESSAGE = "計算物質重量百分比結束";
-            // analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL,
-            // CommonContext.ANALYSIS_LOG_END_MESSAGE);
+
+            System.out.println(urlOfExcel);
+            try (FileOutputStream fileOut = new FileOutputStream(urlOfExcel)) {
+                for (int i = 0; i < excelParameter.excelWriteDataList.size(); i++) {
+                    Row rowWrite = newSheet.createRow(i + 1);
+                    System.out.println(
+                            excelParameter.excelWriteDataList.get(i).currentCellOfNumber + "," +
+                                    excelParameter.excelWriteDataList.get(i).particleNameOfcell + "," +
+                                    excelParameter.excelWriteDataList.get(i).cellOfElement + "," +
+                                    excelParameter.excelWriteDataList.get(i).cellOfWeight);
+                    Cell cellOfPartNum = rowWrite.createCell(0);
+                    if (excelParameter.excelWriteDataList.get(i).currentCellOfNumber > 0) {
+                        cellOfPartNum.setCellValue(excelParameter.excelWriteDataList.get(i).currentCellOfNumber);
+                    } else {
+                        cellOfPartNum.setCellValue("");
+                    }
+                    Cell cellOfPartName = rowWrite.createCell(1);
+                    cellOfPartName.setCellValue(excelParameter.excelWriteDataList.get(i).particleNameOfcell);
+                    Cell cellOfmateriaNam = rowWrite.createCell(2);
+                    cellOfmateriaNam.setCellValue(excelParameter.excelWriteDataList.get(i).cellOfElement);
+                    Cell cellOfWP = rowWrite.createCell(3);
+                    if (excelParameter.excelWriteDataList.get(i).cellOfWeight != null) {
+                        System.out.println(excelParameter.excelWriteDataList.get(i).cellOfWeight);
+                        cellOfWP.setCellStyle(percentageStyle);
+                        cellOfWP.setCellValue(excelParameter.excelWriteDataList.get(i).cellOfWeight);
+                        System.out.println(cellOfWP.getNumericCellValue());
+
+                    }
+
+                }
+                workbook.write(fileOut);
+            } catch (Exception e) {
+                analysisLogExcel(CommonContext.ANALYSIS_TARGET_URL, "寫入重量百分比資料失敗，請留意是否開啟資料表" + e);
+            }
+
             workbook.close();
 
         } catch (Exception e) {
